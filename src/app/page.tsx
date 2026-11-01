@@ -62,39 +62,71 @@ interface CellButtonProps {
 }
 
 function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }: CellButtonProps) {
-  // --- Долгое нажатие на телефоне = правый клик мыши ---
+  // --- Долгое нажатие на телефоне = флажок ---
+  // Игра отслеживает удержание сама и гасит «хвост» системных событий
+  // (contextmenu и click), которые телефон досылает после удержания.
+  // Раньше contextmenu переключал флажок ОБРАТНО — он исчезал, игрок
+  // тапал снова и подрывался на мине.
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startPosRef = useRef<{ x: number; y: number } | null>(null)
-  const suppressClickRef = useRef(false) // гасим click, который идёт ПОСЛЕ долгого нажатия
+  const suppressRef = useRef(false) // гасим click/contextmenu ПОСЛЕ долгого нажатия
+  const pointerTypeRef = useRef<string>('')
+  const [holding, setHolding] = useState(false) // подсветка клетки при удержании
 
-  const startLongPress = (e: React.PointerEvent) => {
-    if (e.button !== 0) return // только левая кнопка / палец
-    suppressClickRef.current = false
-    startPosRef.current = { x: e.clientX, y: e.clientY }
-    timerRef.current = setTimeout(() => {
-      suppressClickRef.current = true
-      onFlag()
-      if ('vibrate' in navigator) navigator.vibrate(50) // лёгкая вибрация
-    }, 400)
-  }
-  const cancelLongPress = () => {
+  const clearTimer = () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current)
       timerRef.current = null
     }
   }
-  // Если палец «уехал» при скролле — отменяем флажок
-  const onPointerMove = (e: React.PointerEvent) => {
+  // Палец отпущен/уехал до срабатывания — флажок не ставим
+  const endHold = () => {
+    clearTimer()
+    startPosRef.current = null
+    setHolding(false)
+  }
+
+  // При уходе со страницы не оставляем висящий таймер
+  useEffect(() => {
+    return () => clearTimer()
+  }, [])
+
+  const startLongPress = (e: React.PointerEvent) => {
+    pointerTypeRef.current = e.pointerType
+    suppressRef.current = false // новое касание — новый жест
+    if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return // у мыши правый клик и так работает
+    startPosRef.current = { x: e.clientX, y: e.clientY }
+    setHolding(true)
+    clearTimer()
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null
+      suppressRef.current = true
+      startPosRef.current = null
+      setHolding(false)
+      onFlag()
+      if ('vibrate' in navigator) navigator.vibrate(50) // лёгкая вибрация
+    }, 400)
+  }
+  // Палец «уехал» при скролле — отменяем флажок и гасим досланный клик
+  const handlePointerMove = (e: React.PointerEvent) => {
     const s = startPosRef.current
-    if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 10) cancelLongPress()
+    if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 12) {
+      endHold()
+      suppressRef.current = true
+    }
   }
 
   const handleClick = () => {
-    if (suppressClickRef.current) {
-      suppressClickRef.current = false
-      return
-    }
+    // suppress сбрасывается при СЛЕДУЮЩЕМ касании (startLongPress),
+    // чтобы пара «contextmenu + click» не проскочила дважды
+    if (pointerTypeRef.current === 'touch' && suppressRef.current) return
     onReveal()
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault() // убираем системное меню браузера
+    if (pointerTypeRef.current === 'touch' && suppressRef.current) return
+    onFlag()
   }
 
   // --- Что показывать в клетке? ---
@@ -136,6 +168,13 @@ function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }:
     }
   }
 
+  // Призрак флажка: игрок видит, что удержание работает, и не убирает палец рано
+  const ghost = holding && !cell.isRevealed && !cell.isFlagged
+  if (ghost) {
+    content = <span className="opacity-40">🚩</span>
+    style = `${style} ring-2 ring-inset ring-red-500`
+  }
+
   const ariaState = cell.isRevealed
     ? cell.isMine
       ? 'мина'
@@ -147,18 +186,16 @@ function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }:
   return (
     <button
       type="button"
-      className={`grid place-items-center rounded-[5px] border border-black/5 transition-colors select-none touch-manipulation active:scale-95 ${style} ${sizeClass}`}
+      className={`grid place-items-center rounded-[5px] border border-black/5 transition-colors select-none touch-manipulation [-webkit-tap-highlight-color:transparent] active:scale-95 ${style} ${sizeClass}`}
+      style={{ WebkitTouchCallout: 'none' }}
       aria-label={`Ряд ${row + 1}, столбец ${col + 1}: ${ariaState}`}
       onClick={handleClick}
-      onContextMenu={(e) => {
-        e.preventDefault() // убираем системное меню браузера
-        onFlag()
-      }}
+      onContextMenu={handleContextMenu}
       onPointerDown={startLongPress}
-      onPointerUp={cancelLongPress}
-      onPointerLeave={cancelLongPress}
-      onPointerCancel={cancelLongPress}
-      onPointerMove={onPointerMove}
+      onPointerUp={endHold}
+      onPointerLeave={endHold}
+      onPointerCancel={endHold}
+      onPointerMove={handlePointerMove}
       onKeyDown={(e) => {
         // Флажок с клавиатуры: F или А (русская раскладка)
         if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') {
@@ -395,6 +432,10 @@ export default function Home() {
           <span>
             <span className="mr-1 text-base">⚡</span>
             <b>Клик по цифре</b> — открыть соседей («аккорд»)
+          </span>
+          <span>
+            <span className="mr-1 text-base">📱</span>
+            <b>Телефон:</b> держите клетку — подсветка и призрак флажка, затем вибрация
           </span>
           <span>
             <span className="mr-1 text-base">💡</span>
