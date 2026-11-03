@@ -3,10 +3,10 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Сапёр — классическая игра на React",
+  title: "Сапер — класична гра на React",
   description:
-    "Классический Сапёр на React: три сложности, таймер, рекорды и «аккорды». Твоя первая веб-игра.",
-  keywords: ["Сапёр", "Minesweeper", "игра", "React", "Next.js"],
+    "Класичний Сапер на React: три рівні складності, таймер, рекорди та «акорди». Твоя перша веб-гра.",
+  keywords: ["Сапер", "Сапёр", "Minesweeper", "гра", "гра онлайн", "React", "Next.js"],
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="uk" suppressHydrationWarning>
       <body className="antialiased bg-background text-foreground">
         {children}
         <Toaster />
