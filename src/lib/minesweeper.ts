@@ -34,10 +34,15 @@ export interface GameState {
 }
 
 /** Настройки сложности */
+export interface Bi {
+  uk: string // український текст (мова за замовчуванням)
+  ru: string // російський текст
+}
+
 export const DIFFICULTIES = {
-  easy:   { label: 'Легко',  rows: 9,  cols: 9,  mines: 10 },
-  medium: { label: 'Средне', rows: 16, cols: 16, mines: 40 },
-  hard:   { label: 'Сложно', rows: 16, cols: 30, mines: 99 },
+  easy:   { label: { uk: 'Легко',    ru: 'Легко' }  as Bi, rows: 9,  cols: 9,  mines: 10 },
+  medium: { label: { uk: 'Середньо', ru: 'Средне' } as Bi, rows: 16, cols: 16, mines: 40 },
+  hard:   { label: { uk: 'Складно',  ru: 'Сложно' } as Bi, rows: 16, cols: 30, mines: 99 },
 } as const
 
 export type Difficulty = keyof typeof DIFFICULTIES
