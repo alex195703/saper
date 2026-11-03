@@ -23,6 +23,7 @@ import {
 } from '@/lib/minesweeper'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useL, useBi, LangSwitch } from '@/lib/i18n'
 
 // --- Константы внешнего вида ---------------------------------
 
@@ -62,6 +63,8 @@ interface CellButtonProps {
 }
 
 function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }: CellButtonProps) {
+  const L = useL() // двуязычные тексты (uk/ru)
+
   // --- Долгое нажатие на телефоне = флажок ---
   // Игра отслеживает удержание сама и гасит «хвост» системных событий
   // (contextmenu и click), которые телефон досылает после удержания.
@@ -177,18 +180,21 @@ function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }:
 
   const ariaState = cell.isRevealed
     ? cell.isMine
-      ? 'мина'
-      : `открыта, мин рядом: ${cell.adjacentMines}`
+      ? L('міна', 'мина')
+      : L(`відкрита, мін поруч: ${cell.adjacentMines}`, `открыта, мин рядом: ${cell.adjacentMines}`)
     : cell.isFlagged
-      ? 'флажок'
-      : 'закрыта'
+      ? L('прапорець', 'флажок')
+      : L('закрита', 'закрыта')
 
   return (
     <button
       type="button"
       className={`grid place-items-center rounded-[5px] border border-black/5 transition-colors select-none touch-manipulation [-webkit-tap-highlight-color:transparent] active:scale-95 ${style} ${sizeClass}`}
       style={{ WebkitTouchCallout: 'none' }}
-      aria-label={`Ряд ${row + 1}, столбец ${col + 1}: ${ariaState}`}
+      aria-label={L(
+        `Ряд ${row + 1}, стовпець ${col + 1}: ${ariaState}`,
+        `Ряд ${row + 1}, столбец ${col + 1}: ${ariaState}`,
+      )}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       onPointerDown={startLongPress}
@@ -214,6 +220,8 @@ function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }:
 // ============================================================
 
 export default function Home() {
+  const L = useL() // (uk, ru) → текст поточной мови
+  const B = useBi() // { uk, ru } → текст поточной мови
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
   const [game, setGame] = useState<GameState>(() => createGameState('easy'))
   const [time, setTime] = useState(0) // секунды
@@ -295,12 +303,12 @@ export default function Home() {
   // Текст для скринридеров
   const statusText =
     game.status === 'won'
-      ? 'Победа!'
+      ? L('Перемога!', 'Победа!')
       : game.status === 'lost'
-        ? 'Поражение'
+        ? L('Поразка', 'Поражение')
         : game.status === 'playing'
-          ? 'Игра идёт'
-          : 'Откройте любую клетку, чтобы начать'
+          ? L('Гра триває', 'Игра идёт')
+          : L('Відкрийте будь-яку клітинку, щоб почати', 'Откройте любую клетку, чтобы начать')
 
   // ============================================================
   // Разметка
@@ -314,12 +322,13 @@ export default function Home() {
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center gap-5 px-4 py-8">
         {/* Заголовок */}
-        <header className="space-y-1 text-center">
+        <header className="relative w-full space-y-1 text-center">
+          <LangSwitch className="absolute right-0 top-0.5" />
           <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 sm:text-4xl">
-            🧨 Сапёр
+            🧨 {L('Сапер', 'Сапёр')}
           </h1>
           <p className="text-sm text-stone-500 sm:text-base">
-            Классика жанра — первая игра на React
+            {L('Класика жанру — перша гра на React', 'Классика жанра — первая игра на React')}
           </p>
         </header>
 
@@ -329,15 +338,15 @@ export default function Home() {
             <TabsList>
               {(Object.keys(DIFFICULTIES) as Difficulty[]).map((key) => (
                 <TabsTrigger key={key} value={key}>
-                  {DIFFICULTIES[key].label}
+                  {B(DIFFICULTIES[key].label)}
                 </TabsTrigger>
               ))}
             </TabsList>
           </Tabs>
           <p className="text-xs text-stone-500 sm:text-sm">
             {bestTimes[difficulty] !== undefined
-              ? `🏆 Рекорд: ${bestTimes[difficulty]} сек`
-              : 'Рекорд ещё не установлен'}
+              ? L(`🏆 Рекорд: ${bestTimes[difficulty]} сек`, `🏆 Рекорд: ${bestTimes[difficulty]} сек`)
+              : L('Рекорд ще не встановлено', 'Рекорд ещё не установлен')}
           </p>
         </div>
 
@@ -345,21 +354,21 @@ export default function Home() {
         <div className="flex items-center gap-3 sm:gap-4">
           <span
             className="min-w-18 rounded-lg bg-stone-900 px-3 py-1.5 text-center font-mono text-lg font-bold text-amber-300 tabular-nums shadow-inner sm:text-xl"
-            aria-label={`Осталось мин: ${minesLeft}`}
+            aria-label={L(`Залишилось мін: ${minesLeft}`, `Осталось мин: ${minesLeft}`)}
           >
             💣 {minesLeft < 0 ? minesLeft : String(minesLeft).padStart(2, '0')}
           </span>
           <button
             type="button"
             onClick={restart}
-            aria-label="Начать заново"
+            aria-label={L('Почати заново', 'Начать заново')}
             className="grid size-12 place-items-center rounded-xl border border-stone-300 bg-stone-200 text-2xl shadow-sm transition hover:bg-stone-100 active:scale-90 sm:size-14 sm:text-3xl"
           >
             {game.status === 'won' ? '😎' : game.status === 'lost' ? '💀' : '🙂'}
           </button>
           <span
             className="min-w-18 rounded-lg bg-stone-900 px-3 py-1.5 text-center font-mono text-lg font-bold text-amber-300 tabular-nums shadow-inner sm:text-xl"
-            aria-label={`Прошло секунд: ${time}`}
+            aria-label={L(`Минуло секунд: ${time}`, `Прошло секунд: ${time}`)}
           >
             ⏱ {String(time).padStart(3, '0')}
           </span>
@@ -395,22 +404,24 @@ export default function Home() {
               <div className="max-w-[90%] animate-in zoom-in-95 rounded-2xl bg-white px-8 py-6 text-center shadow-2xl duration-300 sm:px-10">
                 <div className="mb-2 text-5xl">{game.status === 'won' ? '🏆' : '💥'}</div>
                 <h2 className="mb-1 text-xl font-bold text-stone-800 sm:text-2xl">
-                  {game.status === 'won' ? 'Победа!' : 'Взрыв!'}
+                  {game.status === 'won' ? L('Перемога!', 'Победа!') : L('Вибух!', 'Взрыв!')}
                 </h2>
                 <p className="mb-1 text-sm text-stone-500">
                   {game.status === 'won'
-                    ? `Поле разминировано за ${time} сек`
-                    : 'Вы наступили на мину. Ещё попытка?'}
+                    ? L(`Поле розміновано за ${time} сек`, `Поле разминировано за ${time} сек`)
+                    : L('Ви наступили на міну. Ще спроба?', 'Вы наступили на мину. Ещё попытка?')}
                 </p>
                 {game.status === 'won' && (
                   <p
                     className={`text-sm ${newRecord ? 'font-semibold text-amber-600' : 'text-stone-400'}`}
                   >
-                    {newRecord ? '🏆 Новый рекорд!' : `Рекорд: ${bestTimes[difficulty]} сек`}
+                    {newRecord
+                      ? L('🏆 Новий рекорд!', '🏆 Новый рекорд!')
+                      : L(`Рекорд: ${bestTimes[difficulty]} сек`, `Рекорд: ${bestTimes[difficulty]} сек`)}
                   </p>
                 )}
                 <Button onClick={restart} className="mt-4">
-                  Играть ещё
+                  {L('Грати ще', 'Играть ещё')}
                 </Button>
               </div>
             </div>
@@ -423,23 +434,27 @@ export default function Home() {
         <div className="mx-auto flex max-w-3xl flex-wrap items-start justify-center gap-x-8 gap-y-3 text-xs text-stone-600 sm:text-sm">
           <span>
             <span className="mr-1 text-base">🖱️</span>
-            <b>Левый клик / тап</b> — открыть клетку
+            <b>{L('Лівий клік / тап', 'Левый клик / тап')}</b>
+            {L(' — відкрити клітинку', ' — открыть клетку')}
           </span>
           <span>
             <span className="mr-1 text-base">🚩</span>
-            <b>Правый клик / долгое нажатие</b> — флажок
+            <b>{L('Правий клік / довге натискання', 'Правый клик / долгое нажатие')}</b>
+            {L(' — прапорець', ' — флажок')}
           </span>
           <span>
             <span className="mr-1 text-base">⚡</span>
-            <b>Клик по цифре</b> — открыть соседей («аккорд»)
+            <b>{L('Клік по числу', 'Клик по цифре')}</b>
+            {L(' — відкрити сусідів («акорд»)', ' — открыть соседей («аккорд»)')}
           </span>
           <span>
             <span className="mr-1 text-base">📱</span>
-            <b>Телефон:</b> держите клетку — подсветка и призрак флажка, затем вибрация
+            <b>{L('Телефон:', 'Телефон:')}</b>
+            {L(' тримайте клітинку — підсвітка й примарний прапорець, потім вібрація', ' держите клетку — подсветка и призрак флажка, затем вибрация')}
           </span>
           <span>
             <span className="mr-1 text-base">💡</span>
-            <b>Первый клик всегда безопасен</b>
+            <b>{L('Перший клік завжди безпечний', 'Первый клик всегда безопасен')}</b>
           </span>
         </div>
       </footer>
