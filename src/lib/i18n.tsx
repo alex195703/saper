@@ -3,7 +3,7 @@
 // ============================================================
 // ДВОМОВНИЙ ШАР: українська (за замовчуванням) та російська.
 // ============================================================
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useSyncExternalStore } from 'react'
 
 export type Lang = 'uk' | 'ru'
 
@@ -89,4 +89,12 @@ export function LangSwitch({ className }: { className?: string }) {
       </button>
     </span>
   )
+}
+
+/** Заголовок вкладки браузера мовою інтерфейсу (укр за замовчуванням) */
+export function useTitle(uk: string, ru: string): void {
+  const lang = useLang()
+  useEffect(() => {
+    document.title = lang === 'uk' ? uk : ru
+  }, [lang, uk, ru])
 }
