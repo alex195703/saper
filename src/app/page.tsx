@@ -23,7 +23,7 @@ import {
 } from '@/lib/minesweeper'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useL, useBi, LangSwitch } from '@/lib/i18n'
+import { useL, useBi, LangSwitch, useTitle } from '@/lib/i18n'
 
 // --- Константы внешнего вида ---------------------------------
 
@@ -221,6 +221,8 @@ function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }:
 
 export default function Home() {
   const L = useL() // (uk, ru) → текст поточной мови
+  useTitle('Сапер — класична гра на React', 'Сапёр — классическая игра на React')
+
   const B = useBi() // { uk, ru } → текст поточной мови
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
   const [game, setGame] = useState<GameState>(() => createGameState('easy'))
