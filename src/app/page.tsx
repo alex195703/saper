@@ -221,7 +221,7 @@ function CellButton({ cell, gameStatus, sizeClass, row, col, onReveal, onFlag }:
 
 export default function Home() {
   const L = useL() // (uk, ru) → текст поточной мови
-  useTitle('Сапер — класична гра на React', 'Сапёр — классическая игра на React')
+  useTitle('Сапер — класична гра професора Орлова О.В.', 'Сапёр — классическая игра профессора Орлова А.В.')
 
   const B = useBi() // { uk, ru } → текст поточной мови
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
@@ -459,6 +459,9 @@ export default function Home() {
             <b>{L('Перший клік завжди безпечний', 'Первый клик всегда безопасен')}</b>
           </span>
         </div>
+        <p className="mt-4 text-center text-[11px] font-semibold text-stone-400">
+          🎓 {L('Автор і розробник — професор Орлов О.В.', 'Автор и разработчик — профессор Орлов А.В.')}
+        </p>
       </footer>
     </div>
   )
